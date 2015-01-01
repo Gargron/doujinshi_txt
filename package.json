@@ -1,0 +1,16 @@
+{
+  "name": "doujinshi_txt",
+  "version": "1.0.0",
+  "description": "Twitter markov bot that tweet lewd stuff",
+  "main": "markov.js",
+  "keywords": [
+    "markov",
+    "bot"
+  ],
+  "author": "Eugen Rochko <eugen@zeonfederated.com>",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "0.4.0",
+    "twit": "^1.1.19"
+  }
+}
