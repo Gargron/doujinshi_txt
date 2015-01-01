@@ -4,7 +4,7 @@ var fs = require('fs'),
   dotenv = require('dotenv');
 
 var loadFiles, buildFromCorpus, buildFromLine, nextChoice, getMarkovString, getMarkovStringForWord,
-  tweetMarkovString;
+  tweetMarkovString, tweetString;
 
 var markovChain = {}, startingWords = [], r;
 
@@ -43,7 +43,7 @@ buildFromCorpus = function (data) {
 };
 
 buildFromLine = function (line) {
-  var words = line.replace(/[^\w\s\!\?]/g, ' ').split(' ');
+  var words = line.replace(/[^\w\s\!\?\'\-']/g, ' ').split(' ');
 
   words = words.map(function (word) {
     return word.trim();
@@ -101,7 +101,10 @@ getMarkovStringForWord = function (start, len) {
 
 tweetMarkovString = function () {
   var string = getMarkovString(20);
+  tweetString(string);
+};
 
+tweetString = function (string) {
   var T = new Twit({
     consumer_key: process.env.TWIT_CONSUMER_KEY,
     consumer_secret: process.env.TWIT_CONSUMER_SECRET,
@@ -119,7 +122,6 @@ tweetMarkovString = function () {
   });
 };
 
-
 dotenv.load();
 loadFiles();
 
@@ -132,3 +134,4 @@ r.context.markovChain = markovChain;
 r.context.getMarkovString = getMarkovString;
 r.context.getMarkovStringForWord = getMarkovStringForWord;
 r.context.tweetMarkovString = tweetMarkovString;
+r.context.tweetString = tweetString;
