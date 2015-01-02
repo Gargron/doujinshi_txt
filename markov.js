@@ -50,8 +50,9 @@ buildFromCorpus = function (data) {
 
 buildFromLine = function (line) {
   // Eliminate any characters other than letters/numbers, spaces,
-  // exclamation and question marks and apostrophes
-  var words = line.replace(/[^\w\s\!\?\'\-']/g, ' ').split(' ');
+  // dashes and apostrophes
+  var words = line.replace(/[^\w\s\-\']/g, ' ').split(' '),
+    triple, key;
 
   // Remove empty "words"
   words = words.map(function (word) {
@@ -60,20 +61,30 @@ buildFromLine = function (line) {
     return word.length > 0;
   });
 
-  // Add first word of line to the list of possible starting words
+  // Working with k-grams where k = 2
+  if (words.length < 3) {
+    return;
+  }
+
+  // Add first k-gram of line to the list of possible starting words
   if (typeof words[0] !== 'undefined') {
-    startingWords.push(words[0].toLowerCase());
+    startingWords.push([words[0], words[1]].map(function (word) {
+      return word.toLowerCase();
+    }).join(':'));
   }
 
   // Build the actual network
-  for (var i = 0; i < words.length - 1; i += 1) {
-    var word   = words[i].toLowerCase(),
-      nextWord = words[i + 1].toLowerCase();
+  for (var i = 0; i < words.length - 2; i += 1) {
+    triple = [words[i], words[i + 1], words[i + 2]].map(function (word) {
+      return word.toLowerCase();
+    });
 
-    if (markovChain.hasOwnProperty(word)) {
-      markovChain[word].push(nextWord);
+    key = triple[0] + ':' + triple[1];
+
+    if (markovChain.hasOwnProperty(key)) {
+      markovChain[key].push(triple[2]);
     } else {
-      markovChain[word] = [nextWord];
+      markovChain[key] = [triple[2]];
     }
   };
 };
@@ -91,7 +102,7 @@ nextChoice = function (currentWord) {
 
   decision = Math.floor(Math.random() * possibleWords.length);
 
-  return possibleWords[decision];
+  return [(currentWord.split(':'))[1], possibleWords[decision]].join(':');
 };
 
 getMarkovString = function (len) {
@@ -104,10 +115,23 @@ getMarkovStringForWord = function (start, len) {
   var stringArr = [],
     nextWord    = start;
 
+  stringArr.push((nextWord.split(':'))[0]);
+
   while (nextWord !== null && stringArr.length < len) {
-    stringArr.push(nextWord);
+    stringArr.push((nextWord.split(':'))[1]);
     nextWord = nextChoice(nextWord);
   }
+
+  // Capitalize first word of the output, and end it with a period
+  stringArr = stringArr.map(function (word, i) {
+    if (i === 0) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    } else if (i === stringArr.length - 1) {
+      return word + '.';
+    } else {
+      return word;
+    }
+  });
 
   return stringArr.join(' ');
 };
