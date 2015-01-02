@@ -1,7 +1,7 @@
 {
   "name": "doujinshi_txt",
   "version": "1.0.0",
-  "description": "Twitter markov bot that tweet lewd stuff",
+  "description": "Twitter markov bot that tweets lewd stuff",
   "main": "markov.js",
   "keywords": [
     "markov",
