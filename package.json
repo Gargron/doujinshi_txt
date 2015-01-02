@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "0.4.0",
-    "twit": "^1.1.19"
+    "twit": "^1.1.19",
+    "commander": "2.6.0"
   }
 }

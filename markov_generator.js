@@ -1,24 +1,27 @@
-var fs   = require('fs'),
-  repl   = require('repl'),
-  Twit   = require('twit'),
-  dotenv = require('dotenv');
+var fs = require('fs'),
+  Twit = require('twit');
 
-var loadFiles, buildFromCorpus, buildFromLine, nextChoice, getMarkovString, getMarkovStringForWord,
-  tweetMarkovString, tweetString;
+var MarkovGenerator;
 
-var markovChain = {},
-  startingWords = [],
-  r;
+MarkovGenerator = function () {
+  this.markovChain   = {};
+  this.startingWords = [];
+};
 
-loadFiles = function () {
-  fs.readdir(__dirname + '/data/', function (err, files) {
+MarkovGenerator.prototype.loadFiles = function (callback) {
+  var pathToData = __dirname + '/data/',
+    buildFromCorpus = this.buildFromCorpus.bind(this);
+
+  fs.readdir(pathToData, function (err, files) {
+    var todo = files.length;
+
     if (err) {
       console.error('Could not read directory: ' + err);
       return;
     }
 
     files.forEach(function (path) {
-      fs.readFile(__dirname + '/data/' + path, function (err1, data) {
+      fs.readFile(pathToData + path, function (err1, data) {
         if (err1) {
           console.error('Could not read file ' + path + ': ' + err1);
           return;
@@ -26,14 +29,22 @@ loadFiles = function () {
 
         // Build a Markov Chain for every source text
         buildFromCorpus(data);
+
+        // Execute callback when all source files are done
+        todo -= 1;
+
+        if (todo === 0) {
+          callback();
+        }
       });
     });
   });
 };
 
-buildFromCorpus = function (data) {
+MarkovGenerator.prototype.buildFromCorpus = function (data) {
   // Eliminate Windows linebreaks, double linebreaks
-  var lines = data.toString().replace("\r", "").replace("\n\n", "\n").split("\n");
+  var lines = data.toString().replace("\r", "").replace("\n\n", "\n").split("\n"),
+    buildFromLine = this.buildFromLine.bind(this);
 
   // Remove empty lines
   lines = lines.map(function (line) {
@@ -48,7 +59,7 @@ buildFromCorpus = function (data) {
   });
 };
 
-buildFromLine = function (line) {
+MarkovGenerator.prototype.buildFromLine = function (line) {
   // Eliminate any characters other than letters/numbers, spaces,
   // dashes and apostrophes
   var words = line.replace(/[^\w\s\-\']/g, ' ').split(' '),
@@ -68,7 +79,7 @@ buildFromLine = function (line) {
 
   // Add first k-gram of line to the list of possible starting words
   if (typeof words[0] !== 'undefined') {
-    startingWords.push([words[0], words[1]].map(function (word) {
+    this.startingWords.push([words[0], words[1]].map(function (word) {
       return word.toLowerCase();
     }).join(':'));
   }
@@ -81,18 +92,18 @@ buildFromLine = function (line) {
 
     key = triple[0] + ':' + triple[1];
 
-    if (markovChain.hasOwnProperty(key)) {
-      markovChain[key].push(triple[2]);
+    if (this.markovChain.hasOwnProperty(key)) {
+      this.markovChain[key].push(triple[2]);
     } else {
-      markovChain[key] = [triple[2]];
+      this.markovChain[key] = [triple[2]];
     }
   };
 };
 
-nextChoice = function (currentWord) {
+MarkovGenerator.prototype.nextChoice = function (currentWord) {
   var possibleWords, decision;
 
-  possibleWords = markovChain[currentWord];
+  possibleWords = this.markovChain[currentWord];
 
   // What if we don't know of any follow-up to this word?
   if (typeof possibleWords === 'undefined') {
@@ -105,13 +116,13 @@ nextChoice = function (currentWord) {
   return [(currentWord.split(':'))[1], possibleWords[decision]].join(':');
 };
 
-getMarkovString = function (len) {
-  var startingIndex = Math.floor(Math.random() * startingWords.length);
+MarkovGenerator.prototype.getMarkovString = function (len) {
+  var startingIndex = Math.floor(Math.random() * this.startingWords.length);
 
-  return getMarkovStringForWord(startingWords[startingIndex], len);
+  return this.getMarkovStringForWord(this.startingWords[startingIndex], len);
 };
 
-getMarkovStringForWord = function (start, len) {
+MarkovGenerator.prototype.getMarkovStringForWord = function (start, len) {
   var stringArr = [],
     nextWord    = start;
 
@@ -119,7 +130,7 @@ getMarkovStringForWord = function (start, len) {
 
   while (nextWord !== null && stringArr.length < len) {
     stringArr.push((nextWord.split(':'))[1]);
-    nextWord = nextChoice(nextWord);
+    nextWord = this.nextChoice(nextWord);
   }
 
   // Capitalize first word of the output, and end it with a period
@@ -136,12 +147,12 @@ getMarkovStringForWord = function (start, len) {
   return stringArr.join(' ');
 };
 
-tweetMarkovString = function () {
-  var string = getMarkovString(20);
-  tweetString(string);
+MarkovGenerator.prototype.tweetMarkovString = function () {
+  var string = this.getMarkovString(20);
+  this.tweetString(string);
 };
 
-tweetString = function (string) {
+MarkovGenerator.prototype.tweetString = function (string) {
   var T = new Twit({
     consumer_key:        process.env.TWIT_CONSUMER_KEY,
     consumer_secret:     process.env.TWIT_CONSUMER_SECRET,
@@ -159,16 +170,4 @@ tweetString = function (string) {
   });
 };
 
-dotenv.load();
-loadFiles();
-
-r = repl.start({
-  prompt: 'doujinshi_txt>'
-});
-
-r.context.startingWords          = startingWords;
-r.context.markovChain            = markovChain;
-r.context.getMarkovString        = getMarkovString;
-r.context.getMarkovStringForWord = getMarkovStringForWord;
-r.context.tweetMarkovString      = tweetMarkovString;
-r.context.tweetString            = tweetString;
+module.exports = MarkovGenerator;

@@ -10,24 +10,7 @@ Markov chain bot that tweets stuff from doujinshi. Reads Twitter oAuth details f
 Running:
 
     npm install
-    node markov.js
-
-In the REPL:
-
-* `tweetMarkovString()` to tweet random phrase
-* `tweetString(string)` to tweet `string`
-* `getMarkovString(len)` to generate random phrase of `len` words
-* `getMarkovStringForWord(startingWord, len)` to generate random phrase starting with `startingWord` and `len` words long
-* `markovChain` to inspect the internal data structure
-* `startingWords` to inspect possible starting words
-
-The recommended workflow is to check the generated string for sense/funniness before tweeting:
-
-    var t = getMarkovString(20); t
-
-That'll output the string to the REPL, you can use the up-arrow key to repeat it until something funny comes out. Then:
-
-    tweetString(t)
+    ./bin/doujinshi_txt --help
 
 The source texts in the `data` directory have been kindly provided by [@Zeroblade](https://twitter.com/Zeroblade) who translates that kinda stuff.
 

@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+
+var program = require('commander'),
+  dotenv    = require('dotenv'),
+  Markov    = require('../markov_generator');
+
+program
+  .version('0.0.1');
+
+program
+  .command('generate')
+  .description('generate a string of text')
+  .option('-l, --length [n]', 'how many words to use', parseInt, 20)
+  .action(function (options) {
+    var markov = new Markov();
+
+    markov.loadFiles(function () {
+      console.log(markov.getMarkovString(options.length));
+    });
+  });
+
+program
+  .command('tweet')
+  .description('tweet a generated string of text')
+  .action(function () {
+    var markov = new Markov();
+
+    markov.loadFiles(function () {
+      markov.tweetMarkovString();
+    });
+  });
+
+dotenv.load();
+program.parse(process.argv);
